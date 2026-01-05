@@ -10,5 +10,3 @@ find_package(fmt REQUIRED)
 
 add_executable(ArgusEngine src/main.cpp)
 
-# Private linkage restricts symbol visibility
-#target_link_libraries(ArgusEngine PRIVATE fmt::fmt)
