@@ -5,8 +5,6 @@ project(ArgusEngine LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Consume dependencies configured by Conan
-find_package(fmt REQUIRED)
 
 add_executable(ArgusEngine src/main.cpp)
 
