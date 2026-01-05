@@ -2,7 +2,7 @@ name: Argus CI Gatekeeper
 
 on:
     push:
-        branches: [ main ]
+        branches: [ main, "feat/*" ]
     pull_request :
         branches: [ main ]
 
@@ -33,24 +33,29 @@ jobs:
     
     # job 2: c++ Build Check
     cpp-build:
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         defaults:
             run:
                 working-directory: ./argus_engine
+        env:
+            CC: gcc-14
+            CXX: g++-14
         steps:
             - uses: actions/checkout@v4
 
-            - name: Install System Tools
-              run: sudo apt-get update && sudo apt-get install -y cmake build-essential
+            - name: Install System Tools & GCC 14
+              run: |
+                sudo apt-get update 
+                sudo apt-get install -y cmake build-essential gcc-14 g++-14
 
-            - name: Install Conan
-              run: pip install conan
+            - name: Install Latest CMake & Conan
+              run: pip install conan cmake
 
             - name: Detect Conan Profile
               run: conan profile detect --force
 
             - name: Install Dependencies
-              run: conan install . --build=missing
+              run: conan install . --build=missing -s build_type=Release
 
             - name: Build with CMake
               run: |
