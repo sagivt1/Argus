@@ -1,0 +1,29 @@
+# --- C++ ---
+build/
+out/
+cmake-build-*/
+*.exe
+*.o
+*.a
+*.so
+*.dylib
+*.pdb
+
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+*.egg-info/
+
+# --- Dependency Managers ---
+.conan/
+
+# --- IDE / Editor ---
+.vscode/*
+!.vscode/settings.json
+.DS_Store
+.idea/

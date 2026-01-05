@@ -1,0 +1,58 @@
+name: Argus CI Gatekeeper
+
+on:
+    push:
+        branches: [ main ]
+    pull_request :
+        branches: [ main ]
+
+jobs:
+    # job 1: Pyhton quality check
+    python-quality:
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: ./argus_brain
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Install uv
+              uses: astral-sh/setup-uv@v5
+              
+            - name: Set up Python 3.12
+              run: uv python install 3.12
+
+            - name: Install Dependencies
+              run: uv sync
+
+            - name: Run Ruff (Linting)
+              run: uv run ruff check .
+
+            - name: Run Ruff (Formatting)
+              run: uv run ruff format --check .
+    
+    # job 2: c++ Build Check
+    cpp-build:
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: ./argus_engine
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Install System Tools
+              run: sudo apt-get update && sudo apt-get install -y cmake build-essential
+
+            - name: Install Conan
+              run: pip install conan
+
+            - name: Detect Conan Profile
+              run: conan profile detect --force
+
+            - name: Install Dependencies
+              run: conan install . --build=missing
+
+            - name: Build with CMake
+              run: |
+                cmake --preset conan-release
+                cmake --build --preset conan-release
