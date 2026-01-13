@@ -1,18 +1,23 @@
 cmake_minimum_required(VERSION 3.25)
 project(ArgusEngine LANGUAGES CXX)
 
-# Enforce Modern C++23
+# Require C++23 to leverage modern language features.
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Generate a compile_commands.json for tooling support (e.g., clangd).
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Dependencies
+# --- Dependency Resolution ---
+# Conan is used for managing most dependencies.
+# These are located and linked via find_package.
 find_package(glfw3 REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(FFMPEG REQUIRED)
 
-# 2. Fetch ImGui Directly from GitHub (The Fix)
+# Use FetchContent for ImGui to ensure a specific, consistent version
+# is used directly from its repository, avoiding potential version conflicts
+# with a system-installed or package-manager-installed library.
 include(FetchContent)
 FetchContent_Declare(
     imgui
@@ -21,42 +26,46 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(imgui)
 
-# 3. Define the ImGui Library with Backends
-# We manually tell CMake which files to compile
+# --- ImGui Configuration ---
+# Create a dedicated static library for ImGui. This isolates its build
+# and clearly defines the interface for the main application.
 add_library(imgui_lib STATIC
+    # Core ImGui files
     ${imgui_SOURCE_DIR}/imgui.cpp
     ${imgui_SOURCE_DIR}/imgui_draw.cpp
     ${imgui_SOURCE_DIR}/imgui_tables.cpp
     ${imgui_SOURCE_DIR}/imgui_widgets.cpp
     ${imgui_SOURCE_DIR}/imgui_demo.cpp
-    # The Backend Files (Glue Code)
+    # Backend "glue" code for GLFW and OpenGL3.
     ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
 )
 
-# Tell the compiler where to find headers
+# Expose ImGui's headers to any target that links against imgui_lib.
 target_include_directories(imgui_lib PUBLIC 
     ${imgui_SOURCE_DIR} 
     ${imgui_SOURCE_DIR}/backends
 )
 
-# Link ImGui to GLFW and OpenGL so it can compile the glue code
+# Link ImGui to its own dependencies. This ensures that any executable
+# linking against imgui_lib will also correctly link against these.
 target_link_libraries(imgui_lib PUBLIC glfw GLEW::GLEW)
 if(WIN32)
+    # OpenGL is a system library on Windows.
     target_link_libraries(imgui_lib PUBLIC opengl32)
 endif()
 
-# Source Files
+# --- Main Application ---
 set(SOURCES
     src/main.cpp 
 )
 
-# Executable
 add_executable(ArgusEngine ${SOURCES})
 
-# Linking
+# Link the main executable against all required libraries.
 target_link_libraries(ArgusEngine PRIVATE 
-    imgui_lib
+    imgui_lib # Our compiled ImGui
+    # Dependencies from Conan
     glfw
     GLEW::GLEW
     ffmpeg::avcodec
@@ -70,14 +79,19 @@ if(WIN32)
 endif()
 
 
-# Testing section
+# --- Testing ---
+# Standard setup for enabling CTest.
 enable_testing()
 
+# Find the Google Test framework dependency.
 find_package(GTest REQUIRED)
 
+# Define the test executable with its source files.
 add_executable(ArgusTests tests/test_main.cpp)
 
+# Link the test runner against GTest.
 target_link_libraries(ArgusTests PRIVATE GTest::gtest GTest::gtest_main)
 
+# Use the GoogleTest module to automatically discover tests from the source.
 include(GoogleTest)
 gtest_discover_tests(ArgusTests)

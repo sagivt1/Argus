@@ -1,21 +1,28 @@
+# This workflow acts as a Continuous Integration (CI) gate, ensuring that
+# code quality and build integrity are maintained for both the Python and C++ parts of the project.
 name: Argus CI Gatekeeper
 
 on:
+    # Run on direct pushes to the main development branch or any feature branch.
     push:
         branches: [ main, "feat/*" ]
+    # Also run on pull requests targeting the main branch.
     pull_request :
         branches: [ main ]
 
 jobs:
-    # job 1: Pyhton quality check
+    # --- Python Code Quality Job ---
+    # Ensures the Python codebase adheres to linting and formatting standards.
     python-quality:
         runs-on: ubuntu-latest
         defaults:
             run:
+                # All commands in this job will execute within the 'argus_brain' directory.
                 working-directory: ./argus_brain
         steps:
             - uses: actions/checkout@v4
 
+            # Use the modern, fast 'uv' tool for Python environment and package management.
             - name: Install uv
               uses: astral-sh/setup-uv@v5
               
@@ -29,24 +36,35 @@ jobs:
               run: uv run ruff check .
 
             - name: Run Ruff (Formatting)
+              # The --check flag ensures the build fails if code is not formatted correctly,
+              # enforcing a consistent style without modifying files in the CI pipeline.
               run: uv run ruff format --check .
     
-    # job 2: c++ Build Check
+    # --- C++ Build Verification Job ---
+    # Compiles the C++ engine on a clean Ubuntu environment to verify it builds correctly.
     cpp-build:
         runs-on: ubuntu-24.04
         defaults:
             run:
                 working-directory: ./argus_engine
+        # Force the build process to use the GCC 14 compiler.
         env:
             CC: gcc-14
             CXX: g++-14
         steps:
             - uses: actions/checkout@v4
 
+            # Install essential build tools and the specific compiler version required.
             - name: Install System Tools & GCC 14
               run: |
                 sudo apt-get update 
-                sudo apt-get install -y cmake build-essential gcc-14 g++-14
+                sudo apt-get install -y cmake build-essential gcc-14 g++-14 \
+                libgl1-mesa-dev libglu1-mesa-dev \
+                libx11-dev libx11-xcb-dev libfontenc-dev libxaw7-dev \
+                libxcomposite-dev libxcursor-dev libxdamage-dev libxfixes-dev \
+                libxi-dev libxinerama-dev libxmu-dev libxmuu-dev libxpm-dev \
+                libxrandr-dev libxres-dev libxss-dev libxt-dev libxtst-dev \
+                libxv-dev libxvmc-dev libxxf86vm-dev
 
             - name: Install Latest CMake & Conan
               run: pip install conan cmake
@@ -54,13 +72,17 @@ jobs:
             - name: Detect Conan Profile
               run: |
                 conan profile detect --force
-                # Force Conan to recognize we are using GCC 14, not the system default (13)
+                # This is a workaround. The default Conan profile may detect an older GCC version.
+                # We explicitly modify the profile to ensure it uses the version 14 compiler we just installed,
+                # aligning the build environment with our project's requirements.
                 sed -i 's/compiler.version=.*/compiler.version=14/' ~/.conan2/profiles/default
 
             - name: Install Dependencies
+              # --build=missing tells Conan to compile any dependency from source if a pre-built binary is not available.
               run: conan install . --build=missing -s build_type=Release
 
             - name: Build with CMake
+              # Use presets defined in CMakeUserPresets.json for a consistent build configuration.
               run: |
                 cmake --preset conan-release
                 cmake --build --preset conan-release
