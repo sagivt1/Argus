@@ -57,14 +57,15 @@ jobs:
             # Install essential build tools and the specific compiler version required.
             - name: Install System Tools & GCC 14
               run: |
-                sudo apt-get update 
+                sudo apt-get update
+                # Installing all dependencies in a cleaner block to avoid syntax errors
                 sudo apt-get install -y cmake build-essential gcc-14 g++-14 \
                 libgl1-mesa-dev libglu1-mesa-dev \
                 libx11-dev libx11-xcb-dev libfontenc-dev libxaw7-dev \
                 libxcomposite-dev libxcursor-dev libxdamage-dev libxfixes-dev \
                 libxi-dev libxinerama-dev libxmu-dev libxmuu-dev libxpm-dev \
                 libxrandr-dev libxres-dev libxss-dev libxt-dev libxtst-dev \
-                libxv-dev libxvmc-dev libxxf86vm-dev \ 
+                libxv-dev libxvmc-dev libxxf86vm-dev \
                 libva-dev libvdpau-dev
 
             - name: Install Latest CMake & Conan
@@ -87,3 +88,6 @@ jobs:
               run: |
                 cmake --preset conan-release
                 cmake --build --preset conan-release
+              
+            - name: Run Tests
+              run: ctest --test-dir build/Release --output-on-failure
