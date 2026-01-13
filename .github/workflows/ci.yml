@@ -81,7 +81,10 @@ jobs:
 
             - name: Install Dependencies
               # --build=missing tells Conan to compile any dependency from source if a pre-built binary is not available.
-              run: conan install . --build=missing -s build_type=Release
+              run: |
+                conan install . --build=missing -s build_type=Release \
+                -c tools.system.package_manager:mode=install \
+                -c tools.system.package_manager:sudo=True
 
             - name: Build with CMake
               # Use presets defined in CMakeUserPresets.json for a consistent build configuration.
