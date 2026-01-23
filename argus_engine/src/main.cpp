@@ -13,7 +13,7 @@ static void glfwErrorCallback(int error, const char* description) {
 
 int main(int, char**) {
 
-    std.println("Argus Engine: Initializing Graphics Subsystem...");
+    std::println("Argus Engine: Initializing Graphics Subsystem...");
 
     // --- Initialization ---
     
