@@ -26,7 +26,6 @@ __pycache__/
 
 # --- IDE / Editor ---
 .vscode/*
-!.vscode/settings.json
 .DS_Store
 .idea/
 
