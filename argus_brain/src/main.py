@@ -1,18 +1,20 @@
-import sys
 import json
+import sys
+
 from detector import ObjectDetector
+
 
 def main():
     print("Argus Brain Initializing....")
    
     try:
         brain = ObjectDetector()
-    except Exception as e:
-        print(f"CRITICAL: Faild to load AI Model")
+    except Exception:
+        # Fail fast if model weights are missing or incompatible
+        print("CRITICAL: Faild to load AI Model {e}")
         sys.exit(1)
 
-    # test input
-    # use standart testing image if no file found
+    # Default to remote sample for zero-setup verification
     test_image = "https://ultralytics.com/images/zidane.jpg"
     if len(sys.argv) > 1:
         test_image = sys.argv[1]

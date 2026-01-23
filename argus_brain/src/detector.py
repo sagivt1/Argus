@@ -12,12 +12,12 @@ class ObjectDetector:
 
         self.model = YOLO(model_path)
 
-        # Warmup: Run a dummy inference so the first real frame isn't slow
+        # Warmup: Run dummy inference to initialize CUDA context and prevent lag on first frame
         print("[Brain] Model Loaded. Warming up engine...")
         try:
             self.model(torch.zeros(1, 3, 640, 640).to(self.device), verbose=False)
         except Exception:
-            pass  # ignore warmup errors on some cpu
+            pass  # Non-critical: some CPU backends fail on dummy tensors
 
     def _get_optimal_device(self):
         """
@@ -25,11 +25,11 @@ class ObjectDetector:
         """
 
         if torch.cuda.is_available():
-            return "cuda"  # nvidia gpi
+            return "cuda"  # Prioritize NVIDIA CUDA
         elif torch.backends.mps.is_available():
-            return "mps"  # Apple Silicon
+            return "mps"  # Apple Silicon (Metal Performance Shaders)
         else:
-            return "cpu"  # Universal Fallback
+            return "cpu"
 
     def detect(self, source):
         """
@@ -37,15 +37,14 @@ class ObjectDetector:
         return a list of dicts: {'label': str, 'conf': float, 'box': [x1, y1, x2, y2]}
         """
 
-        # Run inference
-        # stream=False: Process completely before returning
-        # verbose: keep console clean
+        # stream=False: Ensure full processing before return (blocking)
+        # verbose=False: Suppress internal library logging
         results = self.model(source, device=self.device, verbose=False)
 
         detections = []
         for result in results:
             for box in result.boxes:
-                # Extract the data
+                # Convert GPU tensors to native Python types for JSON serialization
                 coords = box.xyxy[0].tolist()
                 conf = float(box.conf[0])
                 cls_id = int(box.cls[0])
