@@ -14,6 +14,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 find_package(glfw3 REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(FFMPEG REQUIRED)
+find_package(Boost REQUIRED COMPONENTS system)
 
 # Use FetchContent for ImGui to ensure a specific, consistent version
 # is used directly from its repository, avoiding potential version conflicts
@@ -42,8 +43,8 @@ add_library(imgui_lib STATIC
 )
 
 # Expose ImGui's headers to any target that links against imgui_lib.
-target_include_directories(imgui_lib PUBLIC 
-    ${imgui_SOURCE_DIR} 
+target_include_directories(imgui_lib PUBLIC
+    ${imgui_SOURCE_DIR}
     ${imgui_SOURCE_DIR}/backends
 )
 
@@ -57,13 +58,13 @@ endif()
 
 # --- Main Application ---
 set(SOURCES
-    src/main.cpp 
+    src/main.cpp
 )
 
 add_executable(ArgusEngine ${SOURCES})
 
 # Link the main executable against all required libraries.
-target_link_libraries(ArgusEngine PRIVATE 
+target_link_libraries(ArgusEngine PRIVATE
     imgui_lib # Our compiled ImGui
     # Dependencies from Conan
     glfw
@@ -72,6 +73,7 @@ target_link_libraries(ArgusEngine PRIVATE
     ffmpeg::avformat
     ffmpeg::avutil
     ffmpeg::swscale
+    Boost::system
 )
 
 if(WIN32)

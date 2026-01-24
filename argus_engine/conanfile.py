@@ -5,10 +5,10 @@ class ArgusEngine(ConanFile):
 
     name = "argus_engine"
     version = "0.1.0"
-    
+
     # Defines the matrix of configurations to build for.
     settings = "os", "compiler", "build_type", "arch"
-    
+
     # Generates CMake integration files (toolchain and dependencies).
     generators = "CMakeToolchain", "CMakeDeps"
 
@@ -26,11 +26,9 @@ class ArgusEngine(ConanFile):
 
         # --- Testing Framework ---
         self.requires("gtest/1.17.0")
-    
+
+        self.requires("boost/1.83.0")
+
     def configure(self):
         # Build FFmpeg as a shared library (DLL/SO) to reduce final binary size.
         self.options["ffmpeg"].shared = True
-
-
-
-        
