@@ -23,7 +23,8 @@ class ObjectDetector:
         try:
             self.model(torch.zeros(1, 3, 640, 640).to(self.device), verbose=False)
         except Exception:
-            # This is non-critical as some CPU-only backends might fail on dummy tensors.
+            # This is non-critical as some CPU-only 
+            # backends might fail on dummy tensors.
             pass
 
     def _get_optimal_device(self):
@@ -45,7 +46,8 @@ class ObjectDetector:
             A list of dicts, where each dict represents a detected object:
             {'label': str, 'conf': float, 'box': [x1, y1, x2, y2]}
         """
-        # stream=False: Ensures all results are processed before returning (blocking call).
+        # stream=False: Ensures all results are processed before returning 
+        # (blocking call).
         # verbose=False: Suppresses the library's default logging output.
         results = self.model(source, device=self.device, verbose=False)
 

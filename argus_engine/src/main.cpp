@@ -14,10 +14,19 @@ static void glfwErrorCallback(int error, const char* description) {
 // Command-line arguments are not used in this application.
 int main(int, char**) {
 
-    std::println("Argus Engine: Initializing Graphics Subsystem...");
+    std::println("Argus Engine: Initializing Video Link...");
 
-    // --- Initialization ---
+    // Define the specifications for the video stream.
+    int const WIDTH = 640;
+    int const HEIGHT = 480;
+    int const CHANNELS = 3; // R, G, B color channels.
 
+    // Initialize the writer for inter-process communication via shared memory.
+    SharedMemoryWriter writer("ArgusShm", WIDTH, HEIGHT, CHANNELS);
+
+    // Pre-allocate a buffer to hold the pixel data for one frame.
+    std::vector<uint8_t> frameBuffer(WIDTH * HEIGHT * CHANNELS);
+    
     // Setup a callback to catch and report errors from GLFW.
     glfwSetErrorCallback(glfwErrorCallback);
     if(!glfwInit()) return 1;
@@ -27,6 +36,7 @@ int main(int, char**) {
     if (window == nullptr) return 1;
 
     glfwMakeContextCurrent(window);
+    // Bind the OpenGL context to the current thread.
     // Enable VSync to cap the framerate to the monitor's refresh rate.
     // This prevents screen tearing and reduces unnecessary CPU/GPU usage.
     glfwSwapInterval(1);
@@ -45,6 +55,7 @@ int main(int, char**) {
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     (void)io;
+    // Suppress unused variable warning
     // Allow user navigation within ImGui using the keyboard.
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
@@ -56,16 +67,7 @@ int main(int, char**) {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 130"); // Specify GLSL version for the shader program.
 
-    // --- Synapse Setup ---
-    // Establishes an inter-process communication (IPC) channel via shared memory.
-
-    // create a 1MB buffer named "ArgusShm"
-    size_t const MEM_SIZE = 1024 * 1024; // 1 megabyte
-    SharedMemoryWriter writer("ArgusShm", MEM_SIZE);
-    auto buffer = writer.getBuffer();
-
-    // Used to write continuously changing data into the shared buffer.
-    unsigned char counter = 0;
+    int frameCount = 0;
 
     // --- Main Application Loop ---
     std::println("Argus Engine: Online. Entering Main Loop");
@@ -73,11 +75,17 @@ int main(int, char**) {
         // Check for user input events (e.g., keyboard, mouse).
         glfwPollEvents();
 
-        // --- Data Production ---
-        // Simulates a live data feed by writing a new value to a portion
-        // of the shared memory buffer on each frame.
-        std::fill(buffer.begin(), buffer.begin() + 100, counter);
-        counter++;
+        // Generate a dynamic, shifting color pattern for testing purposes.
+        // TODO: Replace synthetic pattern with actual video capture feed
+        for(int i=0; i< WIDTH * HEIGHT; i++) {
+            frameBuffer[i * 3 + 0] = (frameCount + i) % 256; // R
+            frameBuffer[i * 3 + 1] = 0; // G
+            frameBuffer[i * 3 + 2] = (frameCount + 2) % 256; // B
+        }
+
+        // Send the generated frame to the Python process.
+        writer.writeFrame(frameBuffer);
+        frameCount++;
 
         // --- UI Definition & Rendering ---
         // All ImGui and rendering calls are grouped in this block.
@@ -88,8 +96,8 @@ int main(int, char**) {
             ImGui::NewFrame();
 
             ImGui::Begin("Argus Synapse Status");
-            ImGui::Text("Shared Memory: ACTIVE");
-            ImGui::Text("Signal Value: %d", counter); // Display the value being written.
+            ImGui::Text("Resolution: %dx%d", WIDTH, HEIGHT);
+            ImGui::Text("Frames Sent: %d", frameCount);
             ImGui::End();
 
             // --- Rendering ---
@@ -106,6 +114,7 @@ int main(int, char**) {
             glClear(GL_COLOR_BUFFER_BIT);
 
             // Execute the ImGui draw commands.
+            // Translates ImGui's vertex lists into actual OpenGL draw calls.
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
             // Swap the front and back buffers to display the rendered frame.

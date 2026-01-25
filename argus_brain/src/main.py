@@ -19,7 +19,8 @@ def main():
         sys.exit(1)
 
     # Default to a remote sample for zero-setup verification.
-    # This can be overridden by providing a local file path or URL as a command-line argument.
+    # This can be overridden by providing a local file path or 
+    # URL as a command-line argument.
     test_image = "https://ultralytics.com/images/zidane.jpg"
     if len(sys.argv) > 1:
         test_image = sys.argv[1]
